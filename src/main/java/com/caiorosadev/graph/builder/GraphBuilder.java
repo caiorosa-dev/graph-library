@@ -43,7 +43,13 @@ public class GraphBuilder {
             var toNode = nodesMap.get(edge.to);
 
             if (fromNode == null) {
-                throw new
+                System.out.println("Invalid FROM node in provided edge.");
+                continue;
+            }
+
+            fromNode.appendEdge(toNode);
+            if (type == GraphType.UNDIRECTED) {
+                toNode.appendEdge(fromNode);
             }
         }
 

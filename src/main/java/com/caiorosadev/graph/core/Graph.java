@@ -18,6 +18,17 @@ public class Graph {
     }
 
     public void print() {
-
+        System.out.print("  | ");
+        for (Node node : nodes) {
+            System.out.print(node.getId() + " | ");
+        }
+        System.out.println();
+        for (Node x : nodes) {
+            System.out.print(x.getId() + " | ");
+            for (Node y : nodes) {
+                System.out.print((x.hasEdgeWith(y) ? "X" : " ") + " | ");
+            }
+            System.out.println();
+        }
     }
 }
