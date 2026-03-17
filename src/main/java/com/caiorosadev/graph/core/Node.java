@@ -41,6 +41,7 @@ public class Node {
         }
 
         System.out.print("Finalizado");
+        System.out.println();
     }
 
     public boolean deepSearch(String searchId, Set<Node> visited) {
