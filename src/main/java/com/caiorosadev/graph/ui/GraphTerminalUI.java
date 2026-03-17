@@ -2,6 +2,8 @@ package com.caiorosadev.graph.ui;
 
 import com.caiorosadev.graph.builder.GraphBuilder;
 import com.caiorosadev.graph.core.Graph;
+import com.caiorosadev.graph.ui.phases.BuildPhaseHandler;
+import com.caiorosadev.graph.ui.phases.ExplorePhaseHandler;
 
 import java.util.Optional;
 import java.util.Scanner;

@@ -1,13 +1,9 @@
-package com.caiorosadev.graph.ui;
+package com.caiorosadev.graph.ui.phases;
 
 import com.caiorosadev.graph.core.Graph;
 
 import java.util.Scanner;
 
-/**
- * Responsável pelos comandos da fase de exploração do grafo (após construir).
- * Comandos: matriz, dfs <id>, bfs <id>, sair, ajuda.
- */
 public class ExplorePhaseHandler {
 
     private static final String PROMPT = "explorar> ";
@@ -16,13 +12,6 @@ public class ExplorePhaseHandler {
         return PROMPT;
     }
 
-    /**
-     * Processa uma linha de comando na fase de exploração.
-     *
-     * @param graph grafo já construído
-     * @param line  linha digitada (já trimada)
-     * @return true se o usuário pediu para sair, false caso contrário
-     */
     public boolean process(Graph graph, String line) {
         if (line == null || (line = line.trim()).isEmpty()) {
             return false;

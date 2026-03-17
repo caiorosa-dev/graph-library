@@ -1,4 +1,4 @@
-package com.caiorosadev.graph.ui;
+package com.caiorosadev.graph.ui.phases;
 
 import com.caiorosadev.graph.builder.GraphBuilder;
 import com.caiorosadev.graph.core.Graph;
