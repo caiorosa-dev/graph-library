@@ -31,4 +31,20 @@ public class Graph {
             System.out.println();
         }
     }
+
+    public boolean deepSearch(String id, Node startAt) {
+        if (startAt == null) {
+            startAt = nodes.get(0);
+        }
+
+        return startAt.deepSearch(id, null);
+    }
+
+    public boolean breadthSearch(String id, Node startAt) {
+        if (startAt == null) {
+            startAt = nodes.get(0);
+        }
+
+        return startAt.breadthSearch(id);
+    }
 }
