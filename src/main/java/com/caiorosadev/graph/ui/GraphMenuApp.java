@@ -377,6 +377,9 @@ public class GraphMenuApp {
                     "Escolha:",
                     listItems(
                             item("matrix", "Matriz de adjacência"),
+                            item("closureFwd", "Fecho transitivo direto…"),
+                            item("closureBwd", "Fecho transitivo inverso…"),
+                            item("connectivity", "Conectividade forte e CFCs…"),
                             item("dfsSearch", "DFS — procurar nó"),
                             item("bfsSearch", "BFS — procurar nó"),
                             item("dfsFull", "DFS — exploração completa"),
@@ -390,6 +393,15 @@ public class GraphMenuApp {
             switch (choice) {
                 case "matrix":
                     showContentScreen("Matriz de adjacência", AsciiGraphPreview.renderAdjacencyMatrix(graph));
+                    break;
+                case "closureFwd":
+                    exploreTransitiveClosureForward();
+                    break;
+                case "closureBwd":
+                    exploreTransitiveClosureBackward();
+                    break;
+                case "connectivity":
+                    exploreStrongConnectivityAndSccs();
                     break;
                 case "dfsSearch":
                     exploreSearch(true);
@@ -407,6 +419,83 @@ public class GraphMenuApp {
                     break;
             }
         }
+    }
+
+    private void exploreTransitiveClosureForward() throws IOException {
+        clearScreen();
+        List<Node> all = sortedNodes();
+        String vertexId = showListPrompt(
+                buildHeader("Fecho transitivo direto", null),
+                "vertex",
+                "Vértice:",
+                nodeItems(all)
+        );
+        if (vertexId == null) {
+            return;
+        }
+        Optional<Node> opt = graph.findNode(vertexId);
+        if (opt.isEmpty()) {
+            return;
+        }
+        List<Node> closure = graph.transitiveClosureForward(opt.get());
+        String ids = closure.stream().map(Node::getId).collect(Collectors.joining(", "));
+        List<AttributedString> content = new ArrayList<>();
+        content.add(styledLine("Vértice: «" + vertexId + "»", DIM_STYLE));
+        content.add(AttributedString.EMPTY);
+        content.add(styledLine(
+                "Fecho transitivo direto (" + closure.size() + " vértice(s)): " + ids,
+                OK_STYLE));
+        showMessage("Fecho transitivo direto", content);
+    }
+
+    private void exploreTransitiveClosureBackward() throws IOException {
+        clearScreen();
+        List<Node> all = sortedNodes();
+        String vertexId = showListPrompt(
+                buildHeader("Fecho transitivo inverso", null),
+                "vertex",
+                "Vértice:",
+                nodeItems(all)
+        );
+        if (vertexId == null) {
+            return;
+        }
+        Optional<Node> opt = graph.findNode(vertexId);
+        if (opt.isEmpty()) {
+            return;
+        }
+        List<Node> closure = graph.transitiveClosureBackward(opt.get());
+        String ids = closure.stream().map(Node::getId).collect(Collectors.joining(", "));
+        List<AttributedString> content = new ArrayList<>();
+        content.add(styledLine("Vértice: «" + vertexId + "»", DIM_STYLE));
+        content.add(AttributedString.EMPTY);
+        content.add(styledLine(
+                "Fecho transitivo inverso (" + closure.size() + " vértice(s)): " + ids,
+                OK_STYLE));
+        showMessage("Fecho transitivo inverso", content);
+    }
+
+    private void exploreStrongConnectivityAndSccs() throws IOException {
+        boolean stronglyConnected = graph.isStronglyConnected();
+        List<List<Node>> sccs = graph.stronglyConnectedComponents();
+        List<AttributedString> content = new ArrayList<>();
+        String typeLabel = graph.getGraphType() == GraphType.DIRECTED ? "direcionado" : "não direcionado";
+        content.add(styledLine("Tipo: " + typeLabel, DIM_STYLE));
+        content.add(AttributedString.EMPTY);
+        if (stronglyConnected) {
+            content.add(styledLine("O grafo é fortemente conexo.", OK_STYLE));
+        } else {
+            content.add(styledLine("O grafo não é fortemente conexo.", ERR_STYLE));
+            content.add(AttributedString.EMPTY);
+            content.add(styledLine("Componentes fortemente conexos máximos (CFCs):", DIM_STYLE));
+            int n = 1;
+            for (List<Node> comp : sccs) {
+                String ids = comp.stream().map(Node::getId).collect(Collectors.joining(", "));
+                content.add(styledLine("  " + n + ". { " + ids + " }", OK_STYLE));
+                n++;
+            }
+        }
+        showMessage("Conectividade e CFCs", content);
     }
 
     private void exploreSearch(boolean dfs) throws IOException {

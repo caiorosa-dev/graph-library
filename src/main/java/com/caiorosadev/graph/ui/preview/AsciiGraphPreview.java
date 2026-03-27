@@ -49,31 +49,35 @@ public final class AsciiGraphPreview {
                 }
                 sb.append('\n');
             }
-        } else {
-            Set<String> printed = new HashSet<>();
-            List<String> lines = new ArrayList<>();
-            for (Node node : sorted) {
-                String nodeId = node.getId();
-                for (Node neighbor : node.getNeighbors()) {
-                    String neighborId = neighbor.getId();
-                    String smallerId = nodeId.compareTo(neighborId) <= 0 ? nodeId : neighborId;
-                    String largerId = nodeId.compareTo(neighborId) <= 0 ? neighborId : nodeId;
-                    String key = smallerId + "\0" + largerId;
-                    if (printed.add(key)) {
-                        double weight = node.getEdgeWeight(neighbor).orElse(0);
-                        lines.add(smallerId + " --(" + formatWeight(weight) + ")-- " + largerId);
-                    }
-                }
-            }
-            Collections.sort(lines);
-            if (lines.isEmpty()) {
-                sb.append("(nenhuma aresta)\n");
-            } else {
-                for (String line : lines) {
-                    sb.append(line).append('\n');
+
+            return sb.toString();
+        }
+
+        Set<String> printed = new HashSet<>();
+        List<String> lines = new ArrayList<>();
+        for (Node node : sorted) {
+            String nodeId = node.getId();
+            for (Node neighbor : node.getNeighbors()) {
+                String neighborId = neighbor.getId();
+                String smallerId = nodeId.compareTo(neighborId) <= 0 ? nodeId : neighborId;
+                String largerId = nodeId.compareTo(neighborId) <= 0 ? neighborId : nodeId;
+                String key = smallerId + "\0" + largerId;
+                if (printed.add(key)) {
+                    double weight = node.getEdgeWeight(neighbor).orElse(0);
+                    lines.add(smallerId + " --(" + formatWeight(weight) + ")-- " + largerId);
                 }
             }
         }
+
+        Collections.sort(lines);
+        if (lines.isEmpty()) {
+            sb.append("(nenhuma aresta)\n");
+        } else {
+            for (String line : lines) {
+                sb.append(line).append('\n');
+            }
+        }
+
         return sb.toString();
     }
 
@@ -81,27 +85,35 @@ public final class AsciiGraphPreview {
         if (graph == null || graph.getNodes().isEmpty()) {
             return "(grafo vazio)\n";
         }
+
         List<Node> columnOrder = new ArrayList<>(graph.getNodes());
         columnOrder.sort(Comparator.comparing(Node::getId, Comparator.naturalOrder()));
         int labelW = columnOrder.stream().mapToInt(node -> node.getId().length()).max().orElse(1);
         StringBuilder sb = new StringBuilder();
+        
         sb.append(" ".repeat(Math.max(0, labelW + 2)));
         for (Node columnNode : columnOrder) {
             sb.append(String.format(Locale.ROOT, "%" + Math.max(4, columnNode.getId().length() + 2) + "s", columnNode.getId()));
         }
+        
         sb.append('\n');
+        
         for (Node rowNode : columnOrder) {
             sb.append(String.format(Locale.ROOT, "%-" + (labelW + 2) + "s", rowNode.getId()));
+        
             for (Node columnNode : columnOrder) {
                 String cell;
+
                 if (rowNode.hasEdgeTo(columnNode)) {
                     cell = formatWeight(rowNode.getEdgeWeight(columnNode).orElse(0));
                 } else {
                     cell = "—";
                 }
+                
                 int colWidth = Math.max(4, columnNode.getId().length() + 2);
                 sb.append(String.format(Locale.ROOT, "%" + colWidth + "s", cell));
             }
+            
             sb.append('\n');
         }
         return sb.toString();
@@ -111,11 +123,13 @@ public final class AsciiGraphPreview {
         if (weight == (long) weight) {
             return String.format(Locale.ROOT, "%d", (long) weight);
         }
+
         return String.format(Locale.ROOT, "%.2f", weight);
     }
 
     private static int countIsolated(Graph graph) {
         int count = 0;
+
         for (Node node : graph.getNodes()) {
             if (graph.getGraphType() == GraphType.UNDIRECTED) {
                 if (node.getEdges().isEmpty()) {
@@ -135,6 +149,7 @@ public final class AsciiGraphPreview {
                 }
             }
         }
+
         return count;
     }
 }

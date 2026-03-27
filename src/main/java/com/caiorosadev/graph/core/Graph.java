@@ -7,8 +7,11 @@ import lombok.Setter;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
@@ -44,7 +47,6 @@ public class Graph {
 
     public void append(Node node) {
         nodes.add(node);
-        
         sortNodesById();
     }
 
@@ -52,46 +54,44 @@ public class Graph {
         if (findNode(id).isPresent()) {
             return false;
         }
-        
         append(new Node(id));
-        
         return true;
     }
 
     public boolean removeNode(String id) {
         Optional<Node> opt = findNode(id);
-        
+
         if (opt.isEmpty()) {
             return false;
         }
-        
+
         Node target = opt.get();
-        
+
         for (Node node : nodes) {
             node.removeEdge(target);
         }
-        
+
         nodes.remove(target);
-        
+
         return true;
     }
 
     public boolean addEdge(String fromId, String toId, double weight) {
         Optional<Node> a = findNode(fromId);
         Optional<Node> b = findNode(toId);
-        
+
         if (a.isEmpty() || b.isEmpty()) {
             return false;
         }
-        
+
         Node from = a.get();
         Node to = b.get();
-        
+
         from.addEdge(to, weight);
         if (graphType == GraphType.UNDIRECTED) {
             to.addEdge(from, weight);
         }
-        
+
         return true;
     }
 
@@ -102,16 +102,16 @@ public class Graph {
         if (a.isEmpty() || b.isEmpty()) {
             return false;
         }
-        
+
         Node from = a.get();
         Node to = b.get();
-        
+
         boolean removed = from.removeEdge(to);
-        
+
         if (graphType == GraphType.UNDIRECTED) {
             to.removeEdge(from);
         }
-        
+
         return removed;
     }
 
@@ -121,7 +121,11 @@ public class Graph {
 
     public int edgeCount() {
         if (graphType == GraphType.DIRECTED) {
-            return nodes.stream().mapToInt(node -> node.getEdges().size()).sum();
+            int total = 0;
+            for (Node node : nodes) {
+                total += node.getEdges().size();
+            }
+            return total;
         }
 
         Set<String> pairs = new HashSet<>();
@@ -146,18 +150,19 @@ public class Graph {
         }
 
         Set<Node> visited = new HashSet<>();
-        
         dfsVisit(start, visited, order);
-        
-        return List.copyOf(order);
+
+        return order;
     }
 
-    private void dfsVisit(Node current, Set<Node> visited, List<Node> order) {
+    private void dfsVisit(Node current, Set<Node> visited, List<Node> result) {
         visited.add(current);
-        order.add(current);
-        current.neighborsSortedById().stream()
-                .filter(neighbor -> !visited.contains(neighbor))
-                .forEach(neighbor -> dfsVisit(neighbor, visited, order));
+        result.add(current);
+        for (Node neighbor : current.neighborsSortedById()) {
+            if (!visited.contains(neighbor)) {
+                dfsVisit(neighbor, visited, result);
+            }
+        }
     }
 
     public List<Node> breadthFirstTraversal(Node start) {
@@ -166,18 +171,17 @@ public class Graph {
         if (start == null || !nodes.contains(start)) {
             return order;
         }
-        
+
         Set<Node> visited = new HashSet<>();
         Queue<Node> queue = new ArrayDeque<>();
-        
+
         queue.add(start);
         visited.add(start);
-        
+
         while (!queue.isEmpty()) {
             Node current = queue.poll();
-
             order.add(current);
-        
+
             for (Node neighbor : current.neighborsSortedById()) {
                 if (!visited.contains(neighbor)) {
                     visited.add(neighbor);
@@ -185,32 +189,194 @@ public class Graph {
                 }
             }
         }
-        
-        return List.copyOf(order);
+
+        return order;
     }
 
     public List<Node> nodesWithEdges() {
-        return nodes.stream()
-                .filter(node -> !node.getEdges().isEmpty())
-                .collect(Collectors.toList());
+        List<Node> result = new ArrayList<>();
+        for (Node node : nodes) {
+            if (!node.getEdges().isEmpty()) {
+                result.add(node);
+            }
+        }
+        return result;
     }
 
     public List<Node> nodesExcept(Node exclude) {
-        return nodes.stream()
-                .filter(node -> exclude == null || !node.equals(exclude))
-                .sorted(Comparator.comparing(Node::getId))
-                .collect(Collectors.toList());
+        List<Node> result = new ArrayList<>();
+        for (Node node : nodes) {
+            if (exclude == null || !node.equals(exclude)) {
+                result.add(node);
+            }
+        }
+        result.sort(Comparator.comparing(Node::getId));
+        return result;
     }
 
     public List<Node> validTargetsForNewEdge(Node from) {
         if (from == null || !nodes.contains(from)) {
-            return List.of();
+            return new ArrayList<>();
         }
 
-        return nodes.stream()
-                .filter(node -> !node.equals(from))
-                .filter(node -> !from.hasEdgeTo(node))
-                .sorted(Comparator.comparing(Node::getId))
-                .collect(Collectors.toList());
+        List<Node> result = new ArrayList<>();
+        for (Node node : nodes) {
+            if (!node.equals(from) && !from.hasEdgeTo(node)) {
+                result.add(node);
+            }
+        }
+        result.sort(Comparator.comparing(Node::getId));
+        return result;
+    }
+
+    public List<Node> transitiveClosureForward(Node start) {
+        if (start == null || !nodes.contains(start)) {
+            return new ArrayList<>();
+        }
+
+        Set<Node> visited = new HashSet<>();
+        Queue<Node> queue = new ArrayDeque<>();
+
+        queue.add(start);
+        visited.add(start);
+
+        while (!queue.isEmpty()) {
+            Node current = queue.poll();
+            for (Node neighbor : current.neighborsSortedById()) {
+                if (!visited.contains(neighbor)) {
+                    visited.add(neighbor);
+                    queue.add(neighbor);
+                }
+            }
+        }
+
+        List<Node> result = new ArrayList<>(visited);
+        result.sort(Comparator.comparing(Node::getId, Comparator.naturalOrder()));
+        return result;
+    }
+
+    public List<Node> transitiveClosureBackward(Node target) {
+        if (target == null || !nodes.contains(target)) {
+            return new ArrayList<>();
+        }
+
+        Map<Node, List<Node>> predecessors = buildPredecessorLists();
+
+        Set<Node> visited = new HashSet<>();
+        Queue<Node> queue = new ArrayDeque<>();
+
+        queue.add(target);
+        visited.add(target);
+
+        while (!queue.isEmpty()) {
+            Node current = queue.poll();
+            List<Node> currentPredecessors = predecessors.get(current);
+            if (currentPredecessors != null) {
+                for (Node predecessor : currentPredecessors) {
+                    if (!visited.contains(predecessor)) {
+                        visited.add(predecessor);
+                        queue.add(predecessor);
+                    }
+                }
+            }
+        }
+
+        List<Node> result = new ArrayList<>(visited);
+        result.sort(Comparator.comparing(Node::getId, Comparator.naturalOrder()));
+        return result;
+    }
+
+    public boolean isStronglyConnected() {
+        if (nodes.isEmpty()) {
+            return true;
+        }
+
+        List<List<Node>> components = stronglyConnectedComponents();
+
+        return components.size() == 1 && components.get(0).size() == nodes.size();
+    }
+
+    public List<List<Node>> stronglyConnectedComponents() {
+        List<List<Node>> result = new ArrayList<>();
+
+        if (nodes.isEmpty()) {
+            return result;
+        }
+
+        // Passo 1: DFS no grafo original empilhando na ordem de término
+        Set<Node> visited = new HashSet<>();
+        Deque<Node> finishOrder = new ArrayDeque<>();
+
+        List<Node> sorted = new ArrayList<>(nodes);
+        sorted.sort(Comparator.comparing(Node::getId, Comparator.naturalOrder()));
+
+        for (Node node : sorted) {
+            if (!visited.contains(node)) {
+                dfsCollectFinishOrder(node, visited, finishOrder);
+            }
+        }
+
+        // Passo 2: DFS no grafo reverso na ordem inversa de término, cada profundidade é um CFC
+        Map<Node, List<Node>> predecessors = buildPredecessorLists();
+        visited.clear();
+
+        while (!finishOrder.isEmpty()) {
+            Node node = finishOrder.pop();
+            if (!visited.contains(node)) {
+                List<Node> component = new ArrayList<>();
+                dfsVisitReversed(node, predecessors, visited, component);
+                component.sort(Comparator.comparing(Node::getId, Comparator.naturalOrder()));
+                result.add(component);
+            }
+        }
+
+        result.sort(Comparator.comparing(comp -> comp.get(0).getId(), Comparator.naturalOrder()));
+
+        return result;
+    }
+
+    private void dfsCollectFinishOrder(Node current, Set<Node> visited, Deque<Node> finishOrder) {
+        visited.add(current);
+        for (Node neighbor : current.neighborsSortedById()) {
+            if (!visited.contains(neighbor)) {
+                dfsCollectFinishOrder(neighbor, visited, finishOrder);
+            }
+        }
+        finishOrder.push(current);
+    }
+
+    private void dfsVisitReversed(Node current, Map<Node, List<Node>> predecessors, Set<Node> visited, List<Node> result) {
+
+        visited.add(current);
+        result.add(current);
+
+        List<Node> currentPredecessors = predecessors.get(current);
+
+        if (currentPredecessors != null) {
+            for (Node predecessor : currentPredecessors) {
+                if (!visited.contains(predecessor)) {
+                    dfsVisitReversed(predecessor, predecessors, visited, result);
+                }
+            }
+        }
+    }
+
+    // Roda cada nó do grafo, e cria uma lista das arestas invertidas (do destino para a origem).
+    private Map<Node, List<Node>> buildPredecessorLists() {
+        Map<Node, List<Node>> predecessors = new HashMap<>();
+        for (Node source : nodes) {
+            for (Node destination : source.getNeighbors()) {
+                if (!predecessors.containsKey(destination)) {
+                    predecessors.put(destination, new ArrayList<>());
+                }
+                predecessors.get(destination).add(source);
+            }
+        }
+
+        for (List<Node> predecessorList : predecessors.values()) {
+            predecessorList.sort(Comparator.comparing(Node::getId, Comparator.naturalOrder()));
+        }
+
+        return predecessors;
     }
 }
