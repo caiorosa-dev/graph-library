@@ -26,9 +26,6 @@ public class Graph {
     @Getter
     private final List<Node> nodes = new ArrayList<>();
 
-    public Graph() {
-    }
-
     public Graph(GraphType graphType) {
         this.graphType = Objects.requireNonNull(graphType);
     }
@@ -303,7 +300,7 @@ public class Graph {
             return result;
         }
 
-        // Passo 1: DFS no grafo original empilhando na ordem de término
+        // DFS no grafo original empilhando na ordem de término
         Set<Node> visited = new HashSet<>();
         Deque<Node> finishOrder = new ArrayDeque<>();
 
@@ -316,7 +313,7 @@ public class Graph {
             }
         }
 
-        // Passo 2: DFS no grafo reverso na ordem inversa de término, cada profundidade é um CFC
+        // DFS no grafo reverso na ordem inversa de término, cada profundidade é um CFC (componente fortemente conectado)
         Map<Node, List<Node>> predecessors = buildPredecessorLists();
         visited.clear();
 
@@ -346,7 +343,6 @@ public class Graph {
     }
 
     private void dfsVisitReversed(Node current, Map<Node, List<Node>> predecessors, Set<Node> visited, List<Node> result) {
-
         visited.add(current);
         result.add(current);
 

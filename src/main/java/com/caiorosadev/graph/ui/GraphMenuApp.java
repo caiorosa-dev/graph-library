@@ -41,7 +41,6 @@ public class GraphMenuApp {
         this.lineReader = lineReader;
     }
 
-
     public void run() throws IOException {
         while (true) {
             clearScreen();
