@@ -1,33 +1,75 @@
 package com.caiorosadev.graph.core;
 
 import lombok.Getter;
-import lombok.var;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.OptionalDouble;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-public class Node {
-    @Getter private final String id;
-    @Getter private final Set<Node> edges;
+public final class Node {
+
+    @Getter
+    private final String id;
+
+    private final Map<Node, Edge> edges = new HashMap<>();
 
     public Node(String id) {
-        this.id = id;
-        this.edges = new HashSet<>();
+        this.id = Objects.requireNonNull(id, "id");
     }
 
-    public void appendEdge(Node node) {
-        edges.add(node);
+    public void addEdge(Node target, double weight) {
+        Objects.requireNonNull(target, "target");
+
+        edges.put(target, Edge.between(this, target, weight));
     }
 
-    public boolean hasEdgeWith(Node node) {
-        return edges.contains(node);
+    public boolean removeEdge(Node target) {
+        return edges.remove(target) != null;
+    }
+
+    public boolean hasEdgeTo(Node node) {
+        return edges.containsKey(node);
+    }
+
+    public OptionalDouble getEdgeWeight(Node target) {
+        Edge edge = edges.get(target);
+
+        return edge == null ? OptionalDouble.empty() : OptionalDouble.of(edge.getWeight());
+    }
+
+    public Map<Node, Edge> getEdges() {
+        return Collections.unmodifiableMap(edges);
+    }
+
+    public Set<Node> getNeighbors() {
+        return Collections.unmodifiableSet(edges.keySet());
+    }
+
+    public List<Node> neighborsSortedById() {
+        return edges.keySet().stream()
+                .sorted(Comparator.comparing(Node::getId))
+                .collect(Collectors.toList());
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Node)) return false;
-        Node node = (Node) o;
-        return id.equals(node.id);
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+
+        if (!(other instanceof Node)) {
+            return false;
+        }
+
+        Node that = (Node) other;
+
+        return id.equals(that.id);
     }
 
     @Override
@@ -35,63 +77,8 @@ public class Node {
         return id.hashCode();
     }
 
-    private void printPath(Set<Node> path) {
-        for (var node : path) {
-            System.out.print(node.id + " -> ");
-        }
-
-        System.out.print("Finalizado");
-        System.out.println();
-    }
-
-    public boolean deepSearch(String searchId, Set<Node> visited) {
-        if (visited == null) {
-            visited = new HashSet<>();
-        }
-
-        visited.add(this);
-
-        if (this.id.equals(searchId)) {
-            printPath(visited);
-            return true;
-        }
-
-        for (var edgeNode : edges) {
-            if (visited.contains(edgeNode)) {
-                continue;
-            }
-
-            if (edgeNode.deepSearch(searchId, visited)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    public boolean breadthSearch(String searchId) {
-        Set<Node> visited = new HashSet<>();
-        Queue<Node> queue = new LinkedList<>();
-
-        queue.add(this);
-        visited.add(this);
-
-        while (!queue.isEmpty()) {
-            var current = queue.poll();
-
-            if (current.id.equals(searchId)) {
-                printPath(visited);
-                return true;
-            }
-
-            for (Node edge : current.getEdges()) {
-                if (!visited.contains(edge)) {
-                    visited.add(edge);
-                    queue.add(edge);
-                }
-            }
-        }
-
-        return false;
+    @Override
+    public String toString() {
+        return id;
     }
 }
