@@ -16,7 +16,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class Graph {
-
     @Getter
     @Setter
     private GraphType graphType = GraphType.DIRECTED;
