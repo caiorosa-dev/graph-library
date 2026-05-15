@@ -357,6 +357,68 @@ public class Graph {
         }
     }
 
+    public ColoringResult colorDsatur() {
+        Map<Node, Integer> colors = new HashMap<>();
+        List<Node> sequence = new ArrayList<>();
+        List<Node> uncolored = new ArrayList<>(nodes);
+
+        while (!uncolored.isEmpty()) {
+            Node chosen = null;
+            int bestSaturation = -1;
+            int bestDegree = -1;
+
+            for (Node candidate : uncolored) {
+                int sat = saturationDegree(candidate, colors);
+                int deg = candidate.getNeighbors().size();
+
+                if (sat > bestSaturation
+                        || (sat == bestSaturation && deg > bestDegree)
+                        || (sat == bestSaturation && deg == bestDegree && candidate.getId().compareTo(chosen.getId()) < 0)) {
+                    chosen = candidate;
+                    bestSaturation = sat;
+                    bestDegree = deg;
+                }
+            }
+
+            colors.put(chosen, smallestValidColor(chosen, colors));
+            sequence.add(chosen);
+            uncolored.remove(chosen);
+        }
+
+        int chromatic = 0;
+        for (int c : colors.values()) {
+            if (c > chromatic) chromatic = c;
+        }
+
+        return new ColoringResult(colors, sequence, chromatic);
+    }
+
+    private int saturationDegree(Node node, Map<Node, Integer> colors) {
+        Set<Integer> distinctColors = new HashSet<>();
+        for (Node neighbor : node.getNeighbors()) {
+            Integer c = colors.get(neighbor);
+            if (c != null) {
+                distinctColors.add(c);
+            }
+        }
+        return distinctColors.size();
+    }
+
+    private int smallestValidColor(Node node, Map<Node, Integer> colors) {
+        Set<Integer> used = new HashSet<>();
+        for (Node neighbor : node.getNeighbors()) {
+            Integer c = colors.get(neighbor);
+            if (c != null) {
+                used.add(c);
+            }
+        }
+        int color = 1;
+        while (used.contains(color)) {
+            color++;
+        }
+        return color;
+    }
+
     // Roda cada nó do grafo, e cria uma lista das arestas invertidas (do destino para a origem).
     private Map<Node, List<Node>> buildPredecessorLists() {
         Map<Node, List<Node>> predecessors = new HashMap<>();

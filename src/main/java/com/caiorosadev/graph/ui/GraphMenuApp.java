@@ -1,6 +1,8 @@
 package com.caiorosadev.graph.ui;
 
+import com.caiorosadev.graph.core.ColoringResult;
 import com.caiorosadev.graph.core.Graph;
+import com.caiorosadev.graph.core.GraphColoringExporter;
 import com.caiorosadev.graph.core.Node;
 import com.caiorosadev.graph.enums.GraphType;
 import com.caiorosadev.graph.ui.preview.AsciiGraphPreview;
@@ -383,6 +385,7 @@ public class GraphMenuApp {
                             item("bfsSearch", "BFS — procurar nó"),
                             item("dfsFull", "DFS — exploração completa"),
                             item("bfsFull", "BFS — exploração completa"),
+                            item("coloring", "Coloração de grafos…"),
                             item("back", "← Voltar")
                     )
             );
@@ -413,6 +416,9 @@ public class GraphMenuApp {
                     break;
                 case "bfsFull":
                     exploreFullTraversal(false);
+                    break;
+                case "coloring":
+                    exploreColoring();
                     break;
                 default:
                     break;
@@ -578,6 +584,46 @@ public class GraphMenuApp {
         showMessage(dfs ? "DFS — resultado" : "BFS — resultado", content);
     }
 
+
+    private void exploreColoring() throws IOException {
+        ColoringResult result = graph.colorDsatur();
+
+        List<AttributedString> content = new ArrayList<>();
+        String typeLabel = graph.getGraphType() == GraphType.DIRECTED ? "direcionado" : "não direcionado";
+        content.add(styledLine("Tipo: " + typeLabel, DIM_STYLE));
+        content.add(AttributedString.EMPTY);
+        content.add(styledLine("Número cromático: " + result.getChromaticNumber(), OK_STYLE));
+        content.add(AttributedString.EMPTY);
+        String seqStr = result.getColoringSequence().stream()
+                .map(Node::getId).collect(Collectors.joining(" → "));
+        content.add(styledLine("Sequência de coloração: " + seqStr, DIM_STYLE));
+        content.add(AttributedString.EMPTY);
+        content.add(styledLine("Cores atribuídas:", DIM_STYLE));
+        for (Node node : result.getColoringSequence()) {
+            content.add(styledLine("  " + node.getId() + " → cor " + result.getColors().get(node), OK_STYLE));
+        }
+
+        showMessage("Coloração de grafos — resultado", content);
+
+        clearScreen();
+        String choice = showListPrompt(
+                buildHeader("Coloração de grafos — exportar", null),
+                "exportJson",
+                "Exportar resultado como JSON?",
+                listItems(
+                        item("yes", "Sim, exportar graph-coloring.json"),
+                        item("no", "Não")
+                )
+        );
+        if ("yes".equals(choice)) {
+            try {
+                String path = GraphColoringExporter.export(graph, result);
+                showMessage("Exportar JSON", styledLine("Arquivo salvo: " + path, OK_STYLE));
+            } catch (IOException e) {
+                showMessage("Exportar JSON", styledLine("Erro ao salvar: " + e.getMessage(), ERR_STYLE));
+            }
+        }
+    }
 
     private void screenPreview() throws IOException {
         if (graph == null) {
